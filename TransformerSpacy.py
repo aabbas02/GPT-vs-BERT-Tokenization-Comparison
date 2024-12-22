@@ -21,7 +21,6 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-
 warnings.filterwarnings("ignore")
 RUN_EXAMPLES = True
 import random
@@ -932,7 +931,7 @@ def create_dataloaders(
     max_padding=128,
     is_distributed=True,
 ):
-    device = torch.device("cpu")
+    #device = torch.device("cpu")
     # def create_dataloaders(batch_size=12000):
     def tokenize_de(text):
         return tokenize(text, spacy_de)
