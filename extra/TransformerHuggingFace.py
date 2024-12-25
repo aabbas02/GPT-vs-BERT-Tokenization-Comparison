@@ -4,8 +4,8 @@ print("NumPy version:", np.__version__)
 
 # %%
 #%pip install -r requirements.txt
-%load_ext autoreload
-%autoreload 2
+#%load_ext autoreload
+#%autoreload 2
 
 # %%
 import os
@@ -1050,7 +1050,7 @@ def train_worker(
 
 # %%
 def train_distributed_model(vocab_src, vocab_tgt,  config):
-    from the_annotated_transformer import train_worker
+    from the_annotated_transformer_ import train_worker
 
     ngpus = torch.cuda.device_count()
     os.environ["MASTER_ADDR"] = "localhost"
