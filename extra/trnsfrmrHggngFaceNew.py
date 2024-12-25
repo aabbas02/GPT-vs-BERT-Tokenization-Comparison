@@ -755,7 +755,7 @@ def example_simple_model():
     src = torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]])
     max_len = src.shape[1]
     src_mask = torch.ones(1, 1, max_len)
-    print(greedy_decode(model, src, src_mask, max_len=max_len, start_symbol= tknzr_en.bos_token))
+    print(greedy_decode(model, src, src_mask, max_len=max_len, start_symbol= 0))
     return(model)
 
 model = example_simple_model()
