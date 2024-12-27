@@ -323,7 +323,6 @@ def make_model(
     attn = MultiHeadedAttention(h, d_model)
     ff = PositionwiseFeedForward(d_model, d_ff, dropout)
     position = PositionalEncoding(d_model, dropout)
-
     if HF:
         model = EncoderDecoder(
             nn.Sequential(Embeddings(d_model, src_vocab_len), c(position)),
@@ -340,6 +339,7 @@ def make_model(
             Generator(d_model, tgt_vocab_len),
             nn.Sequential(Embeddings(d_model, tgt_vocab_len), c(position))
         )
+
 
     # This was important from their code.
     # Initialize parameters with Glorot / fan_avg.
@@ -358,27 +358,6 @@ class Batch:
             self.tgt_y = tgt[:, 1:]
             self.tgt_mask = self.make_std_mask(self.tgt, pad)
             self.ntokens = (self.tgt_y != pad).data.sum()
-
-    @staticmethod
-    def make_std_mask(tgt, pad):
-        "Create a mask to hide padding and future words."
-        tgt_mask = (tgt != pad).unsqueeze(-2)
-        tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(
-            tgt_mask.data
-        )
-        return tgt_mask
-    
-class BatchHF:
-    """Object for holding a batch of data with mask during training."""
-
-    def __init__(self, src, tgt=None, padSrc = None, padTgt=None):  # 2 = <blank>
-        self.src = src
-        self.src_mask = (src != padSrc).unsqueeze(-2)
-        if tgt is not None:
-            self.tgt = tgt[:, :-1]
-            self.tgt_y = tgt[:, 1:]
-            self.tgt_mask = self.make_std_mask(self.tgt, padTgt)
-            self.ntokens = (self.tgt_y != padTgt).data.sum()
 
     @staticmethod
     def make_std_mask(tgt, pad):
