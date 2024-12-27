@@ -368,9 +368,28 @@ class Batch:
         )
         return tgt_mask
 
+class BatchHF:
+    """Object for holding a batch of data with mask during training."""
+    def __init__(self, src, tgt=None, padSrc = None, padTgt=None):  # 2 = <blank>
+        self.src = src
+        self.src_mask = (src != padSrc).unsqueeze(-2)
+        if tgt is not None:
+            self.tgt = tgt[:, :-1]
+            self.tgt_y = tgt[:, 1:]
+            self.tgt_mask = self.make_std_mask(self.tgt, padTgt)
+            self.ntokens = (self.tgt_y != padTgt).data.sum()
+
+    @staticmethod
+    def make_std_mask(tgt, pad):
+        "Create a mask to hide padding and future words."
+        tgt_mask = (tgt != pad).unsqueeze(-2)
+        tgt_mask = tgt_mask & subsequent_mask(tgt.size(-1)).type_as(
+            tgt_mask.data
+        )
+        return tgt_mask
+
 def greedy_decode(model, src, src_mask, max_len, start_symbol):
     memory = model.encode(src, src_mask)
-    print(f"Memory shape = {memory.shape}")
     ys = torch.zeros(1, 1).fill_(start_symbol).type_as(src.data)
     for i in range(max_len - 1):
         out = model.decode(
@@ -415,7 +434,12 @@ def collate_batch(
     device,
     max_padding=128,
     pad_id=2,
+    tknzr_de=None,
+    tknzr_en=None
 ):
+    #----------------
+    # SPACY TOKENIZATION AND PADDING
+    #-----------------
     bs_id = torch.tensor([0], device=device)  # <s> token id
     eos_id = torch.tensor([1], device=device)  # </s> token id
     src_list, tgt_list = [], []
@@ -462,10 +486,92 @@ def collate_batch(
                 value=pad_id,
             )
         )
+    srcSpacy = torch.stack(src_list)
+    tgtSpacy = torch.stack(tgt_list)
+    #----------------
+    # HUGGINGFACE TOKENIZATION AND PADDING
+    #-----------------
+    pad_IdDe = torch.tensor(tknzr_de(tknzr_de.pad_token)['input_ids'][0],device = device)
+    bs_idDe = torch.tensor(tknzr_de(tknzr_de.bos_token)['input_ids'][0], device = device)
+    eos_idDe = torch.tensor(tknzr_de(tknzr_de.eos_token)['input_ids'][0], device = device)
+    #
+    pad_IdEn = torch.tensor(tknzr_en(tknzr_en.pad_token)['input_ids'][0], device = device)
+    bs_idEn = torch.tensor(tknzr_en(tknzr_en.bos_token)['input_ids'][0], device = device)
+    eos_idEn = torch.tensor(tknzr_en(tknzr_en.eos_token)['input_ids'][0], device = device)
+    src_list, tgt_list = [], []
+    #------------
+    for (_src,_tgt) in batch:
+        processed_src = torch.cat(
+            [
+                torch.unsqueeze(torch.tensor(bs_idDe,device=device),dim=0),
+                torch.tensor(
+                    tknzr_de(_src)['input_ids'],                                #src_vocab(src_pipeline(_src)),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                torch.unsqueeze(torch.tensor(eos_idDe,device=device),dim=0),
+            ],
+            0,
+        )
 
-    src = torch.stack(src_list)
-    tgt = torch.stack(tgt_list)
-    return (src, tgt)
+#        processed_src = torch.cat(
+#            [
+#                bs_id,
+#                torch.tensor(
+#                    src_vocab(src_pipeline(_src)),
+#                    dtype=torch.int64,
+#                    device=device,
+#                ),
+#                eos_id,
+#            ],
+#            0,
+#        )
+        processed_tgt = torch.cat(
+            [
+                torch.unsqueeze(torch.tensor(bs_idEn,device=device),dim=0),
+                torch.tensor(
+                    tknzr_en(_tgt)['input_ids'],                            #tgt_vocab(tgt_pipeline(_tgt)),
+                    dtype=torch.int64,
+                    device=device,
+                ),
+                torch.unsqueeze(torch.tensor(eos_idEn,device=device),dim=0),
+                                        ],
+            0,
+        )
+
+#        processed_tgt = torch.cat(
+#            [
+#                bs_id,
+#                torch.tensor(
+#                    tgt_vocab(tgt_pipeline(_tgt)),
+#                    dtype=torch.int64,
+#                    device=device,
+#                ),
+#                eos_id,
+#            ],
+#            0,
+#        )
+        src_list.append(
+            # warning - overwrites values for negative values of padding - len
+            pad(
+                processed_src,
+                (
+                    0,
+                    max_padding - len(processed_src),
+                ),
+                value=pad_IdDe,
+            )
+        )
+        tgt_list.append(
+            pad(
+                processed_tgt,
+                (0, max_padding - len(processed_tgt)),
+                value=pad_IdEn,
+            )
+        )
+    srcHF = torch.stack(src_list)
+    tgtHF = torch.stack(tgt_list)
+    return (srcSpacy, tgtSpacy, srcHF, tgtHF)
 
 def create_dataloaders(
     device,
@@ -476,9 +582,10 @@ def create_dataloaders(
     batch_size=12000,
     max_padding=128,
     is_distributed=True,
+    tknzr_de = None,
+    tknzr_en = None
 ):
     device = torch.device("cpu")
-    # def create_dataloaders(batch_size=12000):
     def tokenize_de(text):
         return tokenize(text, spacy_de)
 
@@ -495,6 +602,8 @@ def create_dataloaders(
             device,
             max_padding=max_padding,
             pad_id=vocab_src.get_stoi()["<blank>"],
+            tknzr_de=tknzr_de,
+            tknzr_en=tknzr_en
         )
 
     train_iter, valid_iter, test_iter = datasets.Multi30k(
@@ -511,7 +620,7 @@ def create_dataloaders(
     valid_sampler = (
         DistributedSampler(valid_iter_map) if is_distributed else None
     )
-
+    """
     train_dataloader = DataLoader(
         train_iter_map,
         batch_size=batch_size,
@@ -519,6 +628,7 @@ def create_dataloaders(
         sampler=train_sampler,
         collate_fn=collate_fn,
     )
+    """
     valid_dataloader = DataLoader(
         valid_iter_map,
         batch_size=batch_size,
@@ -526,7 +636,7 @@ def create_dataloaders(
         sampler=valid_sampler,
         collate_fn=collate_fn,
     )
-    return train_dataloader, valid_dataloader
+    return valid_dataloader #train_dataloader, valid_dataloader
 
 def build_vocabulary(spacy_de, spacy_en):
     def tokenize_de(text):
