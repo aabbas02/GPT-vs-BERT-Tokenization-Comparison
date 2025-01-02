@@ -222,8 +222,8 @@ def attention(query, key, value, mask=None, dropout=None):
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
     if mask is not None:
-        #print(f"Attention Matrix = {scores.shape}")
-        #print(mask.shape)
+        print(f"Attention Matrix = {scores.shape}")
+        print(mask.shape)
         scores = scores.masked_fill(mask == 0, -1e9)
     p_attn = scores.softmax(dim=-1)
     if dropout is not None:
@@ -432,7 +432,7 @@ def collate_batch(
     src_vocab,
     tgt_vocab,
     device,
-    max_padding=128,
+    max_padding=72,
     pad_id=2,
     tknzr_de=None,
     tknzr_en=None
@@ -580,7 +580,7 @@ def create_dataloaders(
     spacy_de,
     spacy_en,
     batch_size=12000,
-    max_padding=128,
+    max_padding=72,
     is_distributed=True,
     tknzr_de = None,
     tknzr_en = None
