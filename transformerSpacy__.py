@@ -24,30 +24,28 @@ from transformers import  AutoTokenizer,GPT2Tokenizer
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-tknzr_en = GPT2Tokenizer.from_pretrained('gpt2')
-print(tknzr_en.tokenize("My name is Lani"))
-#tknzr_de = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
-#tknzr_de = AutoTokenizer.from_pretrained('bert-base-multilingual-cased')
-#tknzr_en = tknzr_de
-#tknzr_en = AutoTokenizer.from_pretrained("Xenova/gpt-4")
-#tknzr_en = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
-# Set to False to skip notebook execution (e.g. for debugging)
-from torchtext.datasets import multi30k
+#tknzr_en = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer = "gpt"
+if tokenizer == "gpt":
+    tknzr_de = AutoTokenizer.from_pretrained("Xenova/gpt-4")
+else:
+    tokenizer = "bert"
+    tknzr_de = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
 
+tknzr_en = tknzr_de
+
+# update URL links to the datasets because the links given in the Harvard NLP code do not work
+from torchtext.datasets import multi30k
 multi30k.URL["train"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/training.tar.gz"
 multi30k.URL["valid"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/validation.tar.gz"
 multi30k.URL["test"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/mmt16_task1_test.tar.gz"
-
+#---------------------------
 multi30k.MD5["train"] = "20140d013d05dd9a72dfde46478663ba05737ce983f478f960c1123c6671be5e"
 multi30k.MD5["valid"] = "a7aa20e9ebd5ba5adce7909498b94410996040857154dab029851af3a866da8c"
 multi30k.MD5["test"] = "6d1ca1dba99e2c5dd54cae1226ff11c2551e6ce63527ebb072a1f70f72a5cd36"
 
 warnings.filterwarnings("ignore")
 RUN_EXAMPLES = True
-
-# %%
-# Some convenience helper functions used throughout the notebook
-
 
 def is_interactive_notebook():
     return __name__ == "__main__"
@@ -103,7 +101,6 @@ class EncoderDecoder(nn.Module):
     def decode(self, memory, src_mask, tgt, tgt_mask):
         return self.decoder(self.tgt_embed(tgt), memory, src_mask, tgt_mask)
 
-# %%
 class Generator(nn.Module):
     "Define standard linear + softmax generation step."
 
@@ -118,7 +115,6 @@ def clones(module, N):
     "Produce N identical layers."
     return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
-# %%
 class Encoder(nn.Module):
     "Core encoder is a stack of N layers"
 
@@ -162,13 +158,11 @@ class SublayerConnection(nn.Module):
         "Apply residual connection to any sublayer with the same size."
         return x + self.dropout(sublayer(self.norm(x)))
 
-# %% [markdown]
 # 
 # Each layer has two sub-layers. The first is a multi-head
 # self-attention mechanism, and the second is a simple, position-wise
 # fully connected feed-forward network.
 
-# %%
 class EncoderLayer(nn.Module):
     "Encoder is made up of self-attn and feed forward (defined below)"
 
@@ -184,7 +178,6 @@ class EncoderLayer(nn.Module):
         x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
         return self.sublayer[1](x, self.feed_forward)
 
-# %% [markdown]
 # ### Decoder
 # 
 # The decoder is also composed of a stack of $N=6$ identical layers.
@@ -204,7 +197,6 @@ class Decoder(nn.Module):
             x = layer(x, memory, src_mask, tgt_mask)
         return self.norm(x)
 
-# %% [markdown]
 # 
 # In addition to the two sub-layers in each encoder layer, the decoder
 # inserts a third sub-layer, which performs multi-head attention over
@@ -231,7 +223,6 @@ class DecoderLayer(nn.Module):
         x = self.sublayer[1](x, lambda x: self.src_attn(x, m, m, src_mask))
         return self.sublayer[2](x, self.feed_forward)
 
-# %% [markdown]
 # 
 # We also modify the self-attention sub-layer in the decoder stack to
 # prevent positions from attending to subsequent positions.  This
@@ -535,8 +526,9 @@ def greedy_decode(model, src, src_mask, max_len, start_symbol):
     return ys
 
 def tokenize(text, tokenizer):
-    return  tokenizer.tokenize(text)#[tok.text for tok in tokenizer.tokenizer(text)]
-
+    # convert tokens to ids, convert ids to tokens (tokenzier.decode) - this ensures word based tokenization
+    # the alternative of using tokenizer.tokenize(text) gives sub-word based tokenization
+    return tokenizer.decode(tokenizer(text)['input_ids'])
 
 def yield_tokens(data_iter, tokenizer, index):
     for from_to_tuple in data_iter:
@@ -573,22 +565,17 @@ def build_vocabulary(tknzr_de, tknzr_en):
 
 
 def load_vocab():
-    if not exists("vocab.pt"):
+    if not exists("vocab_%s.pt" %tokenizer):
         vocab_src, vocab_tgt = build_vocabulary(tknzr_de, tknzr_en)
-        torch.save((vocab_src, vocab_tgt), "vocab.pt")
+        torch.save((vocab_src, vocab_tgt), "vocab_%s.pt" %tokenizer)
     else:
-        vocab_src, vocab_tgt = torch.load("vocab.pt")
+        vocab_src, vocab_tgt = torch.load("vocab_%s.pt" %tokenizer)
     print("Finished.Vocabulary sizes:")
     print(f"German Vocabulary Length = {len(vocab_src)}")
     print(f"English Vocabulary Length = {len(vocab_tgt)}")
     return vocab_src, vocab_tgt
     
-
-#if is_interactive_notebook():
 vocab_src, vocab_tgt = load_vocab()
-    # global variables used later in the script
-    #spacy_de, spacy_en = show_example(load_tokenizers)
-    #vocab_src, vocab_tgt = show_example(load_vocab, args=[spacy_de, spacy_en])
 
 def collate_batch(
     batch,
@@ -818,33 +805,28 @@ def train_worker(
 
 
 def train_model(vocab_src, vocab_tgt, tknzr_de, tknzr_en, config):
-    if config["distributed"]:
-        train_distributed_model(
-            vocab_src, vocab_tgt, tknzr_de, tknzr_en, config
-        )
-    else:
-        train_worker(
-            device, 1, vocab_src, vocab_tgt, tknzr_de, tknzr_en, config, False
-        )
+    train_worker(
+        device, 1, vocab_src, vocab_tgt, tknzr_de, tknzr_en, config, False
+    )
 
 
 def load_trained_model():
     config = {
-        "batch_size": 256,
+        "batch_size": 64,
         "distributed": False,
         "num_epochs": 1,
         "accum_iter": 10,
         "base_lr": 1.0,
         "max_padding": 72,
         "warmup": 3000,
-        "file_prefix": "multi30k_model_",
+        "file_prefix": "multi30k_model_%s" %tokenizer
     }
-    model_path = "multi30k_model_final_Spacy.pt"
+    model_path = "%s_final.pt" %config["file_prefix"]
     if not exists(model_path):
         train_model(vocab_src, vocab_tgt, tknzr_de, tknzr_en, config)
 
     model = make_model(len(vocab_src), len(vocab_tgt), N=6)
-    model.load_state_dict(torch.load("multi30k_model_final_Spacy.pt",map_location=torch.device("cpu")))
+    model.load_state_dict(torch.load(model_path,map_location=device))
     return model
 
 
@@ -911,11 +893,10 @@ def run_model_example(n_examples=15):
     print("Preparing Data ...")
     _, valid_dataloader = create_dataloaders(
     	device,
-        #torch.device("cpu"),
         vocab_src,
         vocab_tgt,
-        tknzr_de, #spacy_de
-        tknzr_en, #spacy_en
+        tknzr_de, 
+        tknzr_en, 
         batch_size=1,
         is_distributed=False,
     )
@@ -924,8 +905,10 @@ def run_model_example(n_examples=15):
 
     model = make_model(len(vocab_src), len(vocab_tgt), N=6)
     model.to(device)
+
+    model_path = "multi30k_model_%s_final.pt" %tokenizer
     model.load_state_dict(
-        torch.load("multi30k_model_final_Spacy.pt", map_location = device ) #torch.device("cpu"))
+        torch.load(model_path, map_location = device )
     )
 
     print("Checking Model Outputs:")
