@@ -25,7 +25,7 @@ from transformers import  AutoTokenizer,GPT2Tokenizer
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 #tknzr_en = GPT2Tokenizer.from_pretrained('gpt2')
-tokenizer = "gpt"
+tokenizer = "bert"
 if tokenizer == "gpt":
     tknzr_de = AutoTokenizer.from_pretrained("Xenova/gpt-4")
 else:
@@ -50,16 +50,13 @@ RUN_EXAMPLES = True
 def is_interactive_notebook():
     return __name__ == "__main__"
 
-
 def show_example(fn, args=[]):
     if __name__ == "__main__" and RUN_EXAMPLES:
         return fn(*args)
 
-
 def execute_example(fn, args=[]):
     if __name__ == "__main__" and RUN_EXAMPLES:
         fn(*args)
-
 
 class DummyOptimizer(torch.optim.Optimizer):
     def __init__(self):
@@ -528,7 +525,8 @@ def greedy_decode(model, src, src_mask, max_len, start_symbol):
 def tokenize(text, tokenizer):
     # convert tokens to ids, convert ids to tokens (tokenzier.decode) - this ensures word based tokenization
     # the alternative of using tokenizer.tokenize(text) gives sub-word based tokenization
-    return tokenizer.decode(tokenizer(text)['input_ids'])
+    ids = tokenizer(text)['input_ids']
+    return [tokenizer.decode(ids[i]) for i in range(len(ids))]
 
 def yield_tokens(data_iter, tokenizer, index):
     for from_to_tuple in data_iter:
@@ -799,7 +797,7 @@ def train_worker(
         torch.cuda.empty_cache()
 
     if is_main_process:
-        file_path = "%sfinal_Spacy.pt" % config["file_prefix"]
+        file_path = "%s_final.pt" % config["file_prefix"]
         torch.save(module.state_dict(), file_path)
 
 
@@ -809,10 +807,9 @@ def train_model(vocab_src, vocab_tgt, tknzr_de, tknzr_en, config):
         device, 1, vocab_src, vocab_tgt, tknzr_de, tknzr_en, config, False
     )
 
-
 def load_trained_model():
     config = {
-        "batch_size": 64,
+        "batch_size": 1024,
         "distributed": False,
         "num_epochs": 1,
         "accum_iter": 10,
