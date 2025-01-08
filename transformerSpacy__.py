@@ -811,7 +811,7 @@ def load_trained_model():
     config = {
         "batch_size": 1024,
         "distributed": False,
-        "num_epochs": 1,
+        "num_epochs": 15,
         "accum_iter": 10,
         "base_lr": 1.0,
         "max_padding": 72,
