@@ -21,13 +21,14 @@ import torch.distributed as dist
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from transformers import  AutoTokenizer,GPT2Tokenizer
+from utilsTransformer import *
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#tknzr_en = GPT2Tokenizer.from_pretrained('gpt2')
 tokenizer = "bert"
 if tokenizer == "gpt":
-    tknzr_de = AutoTokenizer.from_pretrained("Xenova/gpt-4")
+    #tknzr_de = AutoTokenizer.from_pretrained("Xenova/gpt-4")
+    tknzr_de = AutoTokenizer.from_pretrained("openai-community/openai-gpt")
 else:
     tokenizer = "bert"
     tknzr_de = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
@@ -73,12 +74,9 @@ class DummyOptimizer(torch.optim.Optimizer):
 class DummyScheduler:
     def step(self):
         None
-
+"""
 class EncoderDecoder(nn.Module):
-    """
-    A standard Encoder-Decoder architecture. Base for this and many
-    other models.
-    """
+
 
     def __init__(self, encoder, decoder, src_embed, tgt_embed, generator):
         super(EncoderDecoder, self).__init__()
@@ -141,10 +139,7 @@ class LayerNorm(nn.Module):
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
 
 class SublayerConnection(nn.Module):
-    """
-    A residual connection followed by a layer norm.
-    Note for code simplicity the norm is first as opposed to last.
-    """
+
 
     def __init__(self, size, dropout):
         super(SublayerConnection, self).__init__()
@@ -355,7 +350,8 @@ def make_model(
     return model
 
 class Batch:
-    """Object for holding a batch of data with mask during training."""
+    Object for holding a batch of data with mask during training.
+
 
     def __init__(self, src, tgt=None, pad=2):  # 2 = <blank>
         self.src = src
@@ -374,7 +370,7 @@ class Batch:
             tgt_mask.data
         )
         return tgt_mask
-
+"""
 class TrainState:
     """Track number of steps, examples, and tokens processed"""
 
@@ -473,22 +469,12 @@ class LabelSmoothing(nn.Module):
         self.true_dist = true_dist
         return self.criterion(x, true_dist.clone().detach())
 
-# %% [markdown]
-# 
-# > Label smoothing actually starts to penalize the model if it gets
-# > very confident about a given choice.
-
-# %%
 def loss(x, crit):
     d = x + 3 * 1
     predict = torch.FloatTensor([[0, x / d, 1 / d, 1 / d, 1 / d]])
     return crit(predict.log(), torch.LongTensor([1])).data
 
 
-# %% [markdown]
-# ## Loss Computation
-
-# %%
 class SimpleLossCompute:
     "A simple loss compute and train function."
 
@@ -506,7 +492,7 @@ class SimpleLossCompute:
         )
         return sloss.data * norm, sloss
 
-
+"""
 def greedy_decode(model, src, src_mask, max_len, start_symbol):
     memory = model.encode(src, src_mask)
     ys = torch.zeros(1, 1).fill_(start_symbol).type_as(src.data)
@@ -531,6 +517,7 @@ def tokenize(text, tokenizer):
 def yield_tokens(data_iter, tokenizer, index):
     for from_to_tuple in data_iter:
         yield tokenizer(from_to_tuple[index])
+"""
 
 # %%
 def build_vocabulary(tknzr_de, tknzr_en):
@@ -809,7 +796,7 @@ def train_model(vocab_src, vocab_tgt, tknzr_de, tknzr_en, config):
 
 def load_trained_model():
     config = {
-        "batch_size": 1024,
+        "batch_size": 32,
         "distributed": False,
         "num_epochs": 15,
         "accum_iter": 10,
