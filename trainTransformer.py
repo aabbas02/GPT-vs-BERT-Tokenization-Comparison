@@ -60,14 +60,6 @@ def execute_example(fn, args=[]):
         fn(*args)
 
 
-
-
-
-
-
-
-
-# %%
 def build_vocabulary(tknzr_de, tknzr_en):
     def tokenize_de(text):
         return tokenize(text, tknzr_de)
