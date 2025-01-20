@@ -23,7 +23,6 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from utilsTransformer import *
 
 #-----------
-
 class TrainState:
     """Track number of steps, examples, and tokens processed"""
 
@@ -125,8 +124,6 @@ def loss(x, crit):
     predict = torch.FloatTensor([[0, x / d, 1 / d, 1 / d, 1 / d]])
     return crit(predict.log(), torch.LongTensor([1])).data
 
-
-
 class SimpleLossCompute:
     "A simple loss compute and train function."
 
@@ -143,8 +140,6 @@ class SimpleLossCompute:
             / norm
         )
         return sloss.data * norm, sloss
-
-
 
 def collate_batch(
     batch,
@@ -207,6 +202,46 @@ def collate_batch(
     tgt = torch.stack(tgt_list)
     return (src, tgt)
 
+def build_vocabulary(tknzr_de, tknzr_en):
+    def tokenize_de(text):
+        return tokenize(text, tknzr_de)
+
+    def tokenize_en(text):
+        return tokenize(text, tknzr_en)
+
+    print("Building German Vocabulary ...")
+    train, val, test = datasets.Multi30k(language_pair=("de", "en"))
+    vocab_src = build_vocab_from_iterator(
+        yield_tokens(train + val + test, tokenize_de, index=0),
+        min_freq=1,
+        specials=["<s>", "</s>", "<blank>", "<unk>"],
+    )
+
+    print("Building English Vocabulary ...")
+    train, val, test = datasets.Multi30k(language_pair=("de", "en"))
+    vocab_tgt = build_vocab_from_iterator(
+        yield_tokens(train + val + test, tokenize_en, index=1),
+        min_freq=1,
+        specials=["<s>", "</s>", "<blank>", "<unk>"],
+    )
+
+    vocab_src.set_default_index(vocab_src["<unk>"])
+    vocab_tgt.set_default_index(vocab_tgt["<unk>"])
+
+    return vocab_src, vocab_tgt
+
+def load_vocab(tokenizer, tknzr_de,tknzr_en):
+    if not exists("vocab_%s.pt" %tokenizer):
+        vocab_src, vocab_tgt = build_vocabulary(tknzr_de, tknzr_en)
+        torch.save((vocab_src, vocab_tgt), "vocab_%s.pt" %tokenizer)
+    else:
+        vocab_src, vocab_tgt = torch.load("vocab_%s.pt" %tokenizer)
+    print("Finished.Vocabulary sizes:")
+    print(f"German Vocabulary Length = {len(vocab_src)}")
+    print(f"English Vocabulary Length = {len(vocab_tgt)}")
+    return vocab_src, vocab_tgt
+    
+
 def create_dataloaders(
     device,
     vocab_src,
@@ -217,7 +252,6 @@ def create_dataloaders(
     max_padding=128,
     is_distributed=True,
 ):
-    # def create_dataloaders(batch_size=12000):
     def tokenize_de(text):
         return tokenize(text, tknzr_de)
 
@@ -366,7 +400,6 @@ def train_worker(
     if is_main_process:
         file_path = "%s_final.pt" % config["file_prefix"]
         torch.save(module.state_dict(), file_path)
-
 
 def train_model(vocab_src, vocab_tgt, tknzr_de, tknzr_en, config,device):
     train_worker(
