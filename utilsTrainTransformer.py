@@ -143,9 +143,8 @@ class SimpleLossCompute:
         return sloss.data * norm, sloss
 
 
-
-
-
+from utilsTransformer import *
+"""
 class DummyOptimizer(torch.optim.Optimizer):
     def __init__(self):
         self.param_groups = [{"lr": 0}]
@@ -455,7 +454,7 @@ def yield_tokens(data_iter, tokenizer, index):
     for from_to_tuple in data_iter:
         yield tokenizer(from_to_tuple[index])
 
-
+"""
 def collate_batch(
     batch,
     src_pipeline,
