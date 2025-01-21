@@ -18,4 +18,4 @@ There are 5 files in this repositiory, each of which is described below.
 **5. utilsTransformer.py:** This file contains the helper functions (mostly tansformer architecture declaration related) that are used in transformer training and tokenization comparison. 
 
 # Example Usage
-If trained models and libraries do not exist, run mainTrainTrnasformer.py once with tokenizer = BERT and once again with tokenizer = GPT. These runs will save the trained transformer models and the corresponding vocabularies. After the models and vocabularies are saved, run mainTrainTransformer.py
+If trained models and libraries do not exist, run mainTrainTrnasformer.py once with tokenizer = BERT and once again with tokenizer = GPT. These runs will save the trained transformer models and the corresponding vocabularies. After the models and vocabularies are saved, run mainTokenComparison.ipynb
