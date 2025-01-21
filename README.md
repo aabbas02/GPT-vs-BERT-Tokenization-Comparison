@@ -19,3 +19,6 @@ There are 5 files in this repositiory, each of which is described below.
 
 # Example Usage
 If trained models and libraries do not exist, run mainTrainTrnasformer.py once with tokenizer = BERT and once again with tokenizer = GPT. These runs will save the trained transformer models and the corresponding vocabularies. After the models and vocabularies are saved, run mainTokenComparison.ipynb
+
+
+Email at aabbasi1@iastate.edu for any questions.
