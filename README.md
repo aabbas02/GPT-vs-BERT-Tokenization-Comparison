@@ -5,15 +5,15 @@ The purpose of this repository is to  compare the tokenization performance of Op
 Parts of this code (the transformer architecture, training, and evaluation) are borrowed from [harvardnlp/annotated-transformer](https://github.com/harvardnlp/annotated-transformer). Below is a breakdown of the files included in this repository and example usage:
 
 # Files
-### mainTokenComparison.ipynb: jupyter notebook that outputs the English translation of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
+mainTokenComparison.ipynb: jupyter notebook that outputs the English translation of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
 
-### mainTrainTransformer.py: main file that trains and saves the transformer model for the German To English task on the WMT-2014 dataset, for either the GPT or BERT tokenizer. The vocabularies for theset tokenizers are also saved.
+mainTrainTransformer.py: main file that trains and saves the transformer model for the German To English task on the WMT-2014 dataset, for either the GPT or BERT tokenizer. The vocabularies for theset tokenizers are also saved.
 
-### utilsTokenComparison.py: This file contains the helper functions used in mainTokenComparison.ipynb, described above.
+utilsTokenComparison.py: This file contains the helper functions used in mainTokenComparison.ipynb, described above.
 
-### utilsTrainTransformer.py: This file contains the helper functions used in mainTrainTransformer.py, described above.
+utilsTrainTransformer.py: This file contains the helper functions used in mainTrainTransformer.py, described above.
 
-### utilsTransformer.py: This file contains the helper functions (mostly tansformer architecture declaration related) that are used in transformer training and tokenization comparison. 
+utilsTransformer.py: This file contains the helper functions (mostly tansformer architecture declaration related) that are used in transformer training and tokenization comparison. 
 
 # Example Usage
 If trained models and libraries do not exist, run mainTrainTrnasformer.py once with tokenizer = BERT and once again with tokenizer = GPT. These runs will save the trained transformer models and the corresponding vocabularies. After the models and vocabularies are saved, run mainTrainTransformer.py
