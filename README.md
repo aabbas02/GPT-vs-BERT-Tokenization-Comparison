@@ -7,9 +7,9 @@ Parts of this code (the transformer architecture, training, and evaluation) are 
 # Files
 There are 5 files in this repositiory, each of which is described below.
 
-**1. mainTokenComparison.ipynb:** jupyter notebook that outputs the English translation of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
+**1. mainTokenComparison.ipynb:** This is the jupyter notebook that outputs the English translation of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
 
-**2. mainTrainTransformer.py:** main file that trains and saves the transformer model for the German To English task on the WMT-2014 dataset, for either the GPT or BERT tokenizer. The vocabularies for theset tokenizers are also saved.
+**2. mainTrainTransformer.py:** This is main file that trains and saves the transformer model for the German To English task on the WMT-2014 dataset, for either the GPT or BERT tokenizer. The vocabularies for theset tokenizers are also saved.
 
 **3. utilsTokenComparison.py:** This file contains the helper functions used in mainTokenComparison.ipynb, described above.
 
