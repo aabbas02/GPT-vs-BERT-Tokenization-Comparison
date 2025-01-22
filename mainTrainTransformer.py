@@ -14,9 +14,9 @@ else:
     tknzr_de = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
 
 tknzr_en = tknzr_de
-#---------------------
+#---
 # update URL links to the datasets because the links given in the Harvard NLP code do not work
-#--------------------------
+#---
 from torchtext.datasets import multi30k
 multi30k.URL["train"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/training.tar.gz"
 multi30k.URL["valid"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/validation.tar.gz"
