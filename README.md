@@ -9,7 +9,7 @@ There are 5 files in this repositiory, each of which is described below.
 
 **1. mainTokenComparison.ipynb:** jupyter notebook that outputs the English translation of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
 
-**2. mainTrainTransformer.py:**  python file that trains and saves the transformer model for the German To English task on the WMT-2014 dataset, for either the GPT or BERT tokenizer. The vocabularies for theset tokenizers are also saved.
+**2. mainTrainTransformer.py:**  python file that trains and saves the transformer models for the  for either the GPT or BERT tokenizers for the German To English translation task on the WMT-2014 dataset. The vocabularies for these tokenizers are also saved.
 
 **3. utilsTokenComparison.py:** python file  containing the helper functions used in mainTokenComparison.ipynb, described above.
 
