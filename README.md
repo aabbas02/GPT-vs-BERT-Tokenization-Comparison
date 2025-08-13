@@ -1,10 +1,10 @@
-# GPT vs BERT Tokenization Comparison
+# GPT vs BERT Tokenization Comparison [Tutorial]
 
 The purpose of this repository is to  compare the tokenization performance of [Open AI's GPT](https://platform.openai.com/tokenizer) and Google's BERT tokenizers, both available from [HuggingFace](https://huggingface.co/docs/transformers/v4.48.0/en/main_classes/tokenizer#transformers.PreTrainedTokenizer).
  
 Parts of this code (the transformer architecture, training, and evaluation) are borrowed from [harvardnlp/annotated-transformer](https://github.com/harvardnlp/annotated-transformer). Below is a breakdown of the files included in this repository and example usage.
 
-# Files
+# Files and Description
 There are 5 files in this repositiory, each of which is described below.
 
 **1. mainTokenComparison.ipynb:** jupyter notebook that outputs the two English translations of the same German sentence by the two encoder-decoder transfomer models trained using Bert or GPT tokenizers.
