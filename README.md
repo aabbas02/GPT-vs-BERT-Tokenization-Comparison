@@ -22,7 +22,7 @@ If trained models and libraries do not exist, run **mainTrainTrnasformer.py** on
 
 # Expected Output
 
-<img src="/figs/results.png"/>
+<img src="/figures/results.png"/>
 
 
 
